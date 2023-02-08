@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "kachel"
+version = "0.1.0"
+description = "Veloviewer Tile Server"
+authors = ["Robin Hutmacher <robin.hutmacher@gmail.com>"]
+packages = [
+    { include = "kachel" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+ruff = "^0.0.243"
+black = "^23.1.0"
+mypy = "^1.0.0"
+ipython = "^8.9.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
