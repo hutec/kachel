@@ -33,7 +33,7 @@ def main():
             visited.add((x, y, zoom))
 
     cache = defaultdict(int)
-    for zoom in range(14, 9, -1):
+    for zoom in range(14, 8, -1):
         for x, y, z in visited:
             parent_x, parent_y = get_parent_tile(x, y, zoom)
 

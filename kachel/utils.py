@@ -15,7 +15,7 @@ def num2deg(xtile: int, ytile: int, zoom: int) -> LatLng:
         zoom: The zoom level of the tile.
 
     Returns:
-        A tuple of latitude and longitude.
+        A tuple of latitude and longitude marking the NW corner of the tile.
     """
     n = 2.0**zoom
     lon_deg = xtile / n * 360.0 - 180.0
@@ -42,3 +42,22 @@ def deg2num(lat_deg: float, lon_deg: float, zoom: int) -> Tuple[int, int]:
     xtile = int((lon_deg + 180.0) / 360.0 * n)
     ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
     return (xtile, ytile)
+
+
+def get_parent_tile(x: int, y: int, z: int) -> Tuple[int, int]:
+    """Get the parent tile of a given zoom 14 tile.
+
+    Args:
+        x: The x coordinate of the tile at zoom 14.
+        y: The y coordinate of the tile at zoom 14.
+        z: The zoom level of the parent tile.
+            Must be smaller than 14.
+
+    Returns:
+        The x and y coordinates of the parent tile at given zoom.
+    """
+    # Get the NW corner of the tile at zoom 14
+    latlng = num2deg(x, y, 14)
+
+    # Convert the NW corner to the parent zoom level
+    return deg2num(*latlng, z)
