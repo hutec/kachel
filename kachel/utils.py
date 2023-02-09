@@ -1,10 +1,10 @@
 import math
 from typing import Tuple
 
-LatLong = Tuple[float, float]
+LatLng = Tuple[float, float]
 
 
-def num2deg(xtile: int, ytile: int, zoom: int) -> LatLong:
+def num2deg(xtile: int, ytile: int, zoom: int) -> LatLng:
     """Converts tile coordinates to latitude and longitude.
 
     Taken from https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Python
