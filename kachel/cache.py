@@ -42,7 +42,7 @@ def main():
             parent_x_l14 = parent_x * n_tiles
             parent_y_l14 = parent_y * n_tiles
 
-            idx = (x - parent_x_l14) * n_tiles + (y - parent_y_l14)
+            idx = (y - parent_y_l14) * n_tiles + (x - parent_x_l14)
             cache[(parent_x, parent_y, zoom)] |= 1 << idx
 
     with open(args.cache, "wb") as f:
