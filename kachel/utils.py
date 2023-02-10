@@ -1,5 +1,6 @@
 import math
 from typing import Tuple
+
 from PIL import Image
 
 LatLng = Tuple[float, float]

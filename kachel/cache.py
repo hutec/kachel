@@ -4,10 +4,10 @@ A cache file is a dict mapping (x, y, z) to a boolean indicating whether
 the tile in zoom level 14 is covered by the geojson file.
 """
 
-from collections import defaultdict
 import argparse
 import json
 import pickle
+from collections import defaultdict
 
 from kachel.utils import deg2num, get_parent_tile
 

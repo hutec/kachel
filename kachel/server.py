@@ -1,9 +1,10 @@
 """The actual tile server."""
 
-import pickle
 import argparse
-from flask import Response, Flask
 import io
+import pickle
+
+from flask import Flask, Response
 
 from kachel.utils import generate_tile
 
