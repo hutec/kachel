@@ -17,8 +17,12 @@ def main():
     parser.add_argument("geojson", help="GeoJSON file")
     parser.add_argument("cache", help="Cache file")
     args = parser.parse_args()
+    create_cache_file(args.geojson, args.cache)
 
-    with open(args.geojson) as f:
+
+def create_cache_file(geojson_file: str, cache_file: str) -> None:
+    """Generate a cache file from a geojson file."""
+    with open(geojson_file) as f:
         geojson = json.load(f)
 
     routes = geojson["features"]
@@ -45,7 +49,7 @@ def main():
             idx = (y - parent_y_l14) * n_tiles + (x - parent_x_l14)
             cache[(parent_x, parent_y, zoom)] |= 1 << idx
 
-    with open(args.cache, "wb") as f:
+    with open(cache_file, "wb") as f:
         pickle.dump(cache, f)
 
 
