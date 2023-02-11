@@ -3,6 +3,8 @@
 import argparse
 import io
 import pickle
+import os
+from typing import Dict, Tuple
 
 from flask import Flask, Response
 
@@ -11,22 +13,29 @@ from kachel.utils import generate_tile
 app = Flask(__name__)
 
 
-@app.route("/tile/<int:z>/<int:x>/<int:y>.png")
-def tile(z: int, x: int, y: int) -> Response:
+@app.route("/<string:user_id>/<int:z>/<int:x>/<int:y>.png")
+def tile(user_id: str, z: int, x: int, y: int) -> Response:
     """serve a tile.
 
-    args:
+    Args:
+        user_id: The user id.
         z: the zoom level, higher is closer.
         x: the x coordinate.
         y: the y coordinate.
 
-    returns:
+    Returns:
         a 256x256 png image
     """
 
+    if user_id not in app.cache:
+        return Response(
+            f"User id {user_id} not found",
+            status=404,
+        )
+
     idx = 0
-    if (x, y, z) in app.cache:
-        idx = app.cache[(x, y, z)]
+    if (x, y, z) in app.cache[user_id]:
+        idx = app.cache[user_id][(x, y, z)]
 
     tile = generate_tile(idx, z)
 
@@ -40,15 +49,37 @@ def tile(z: int, x: int, y: int) -> Response:
     )
 
 
+def _load_cache(cache_dir: str) -> Dict[str, Dict[Tuple[int, int, int], int]]:
+    """Load the cache files from the cache directory.
+
+    Args:
+        cache_dir: The directory containing the cache files.
+
+    Return:
+        A dict mapping user ids to a cache.
+    """
+    cache: Dict[str, Dict[Tuple[int, int, int], int]] = {}
+    for file_name in os.listdir(cache_dir):
+        file_path = os.path.join(cache_dir, file_name)
+        with open(file_path, "rb") as f:
+            user_cache: Dict[Tuple[int, int, int], int] = pickle.load(f)
+            user_id = file_name.split(".")[0]
+            cache[user_id] = user_cache
+
+    return cache
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("cache", help="Cache file")
+    parser.add_argument("cache_dir", help="Directory containg the cache files.")
     args = parser.parse_args()
 
-    with open(args.cache, "rb") as f:
-        cache = pickle.load(f)
-
+    cache = _load_cache(args.cache_dir)
     app.cache = cache
+
+    for user_id in cache.keys():
+        print(user_id + "/{z}/{x}/{y}.png")
+
     app.run()
 
 
