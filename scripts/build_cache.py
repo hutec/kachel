@@ -1,10 +1,13 @@
 """Download geojson files."""
 
+import os
 import argparse
 import json
 from typing import List
 
 import requests
+
+from kachel.cache import create_cache_file
 
 
 def retrieve_user_ids(endpoint: str) -> List[str]:
@@ -26,18 +29,22 @@ def main(endpoint: str) -> None:
     for user_id in user_ids:
         print(f"Working on user {user_id}")
 
-        # Download geojson
         print("Retrieve geojson")
         geojson = retrieve_geojson(endpoint, user_id)
-
-        # Write geojson to file
-        with open(f"data/{user_id}.geojson", "w") as f:
+        os.makedirs("data/geojson", exist_ok=True)
+        with open(f"data/geojson/{user_id}.geojson", "w") as f:
             json.dump(geojson, f)
+
+        print("Build cache file")
+        os.makedirs("data/cache", exist_ok=True)
+        create_cache_file(
+            f"data/geojson/{user_id}.geojson", f"data/cache/{user_id}.pkl"
+        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("endpoint", help="The endpoint to download from.")
+    parser.add_argument("endpoint", help="The endpoint to download geojson from.")
     args = parser.parse_args()
 
     main(args.endpoint)
