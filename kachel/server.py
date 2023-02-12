@@ -2,8 +2,8 @@
 
 import argparse
 import io
-import pickle
 import os
+import pickle
 from typing import Dict, Tuple
 
 from flask import Flask, Response
@@ -71,7 +71,11 @@ def _load_cache(cache_dir: str) -> Dict[str, Dict[Tuple[int, int, int], int]]:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("cache_dir", help="Directory containg the cache files.")
+    parser.add_argument(
+        "--cache_dir",
+        help="Directory containg the cache files.",
+        default="data/cache",
+    )
     args = parser.parse_args()
 
     cache = _load_cache(args.cache_dir)

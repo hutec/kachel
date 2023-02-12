@@ -6,18 +6,68 @@ the tile in zoom level 14 is covered by the geojson file.
 
 import argparse
 import json
+import os
 import pickle
 from collections import defaultdict
+from typing import List
+
+import requests
 
 from kachel.utils import deg2num, get_parent_tile
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("geojson", help="GeoJSON file")
-    parser.add_argument("cache", help="Cache file")
+    # Add two subparsers for the two different modes
+    # One for just converting geojson to cache file
+    # One for downloading geojson files and converting them to cache files
+
+    subparsers = parser.add_subparsers(dest="mode")
+    subparsers.required = True
+    convert_parser = subparsers.add_parser(
+        "convert", description="Convert geojson to cache file"
+    )
+    download_parser = subparsers.add_parser(
+        "download", description="Download geojson files and convert them to cache files"
+    )
+
+    convert_parser.add_argument("geojson", help="Source GeoJSON file or directory")
+    convert_parser.add_argument("cache", help="Target cache file or directory")
+
+    download_parser.add_argument(
+        "endpoint", help="The endpoint to download geojson from."
+    )
     args = parser.parse_args()
-    create_cache_file(args.geojson, args.cache)
+
+    if args.mode == "download":
+        user_ids = retrieve_user_ids(args.endpoint)
+
+        for user_id in user_ids:
+            print(f"Working on user {user_id}")
+
+            print("Retrieve geojson")
+            geojson = retrieve_geojson(args.endpoint, user_id)
+            os.makedirs("data/geojson", exist_ok=True)
+            with open(f"data/geojson/{user_id}.geojson", "w") as f:
+                json.dump(geojson, f)
+
+            print("Build cache file")
+            os.makedirs("data/cache", exist_ok=True)
+            create_cache_file(
+                f"data/geojson/{user_id}.geojson", f"data/cache/{user_id}.pkl"
+            )
+    elif args.mode == "convert":
+        if os.path.isdir(args.geojson):
+            for filename in os.listdir(args.geojson):
+                if not filename.endswith(".geojson"):
+                    continue
+                geojson_file = os.path.join(args.geojson, filename)
+                cache_file = os.path.join(
+                    args.cache, filename.replace(".geojson", ".pkl")
+                )
+                create_cache_file(geojson_file, cache_file)
+        else:
+            create_cache_file(args.geojson, args.cache)
 
 
 def create_cache_file(geojson_file: str, cache_file: str) -> None:
@@ -51,6 +101,19 @@ def create_cache_file(geojson_file: str, cache_file: str) -> None:
 
     with open(cache_file, "wb") as f:
         pickle.dump(cache, f)
+
+
+def retrieve_user_ids(endpoint: str) -> List[str]:
+    url = endpoint + "/users"
+    response = requests.get(url)
+    users = response.json()
+    return [user["id"] for user in users]
+
+
+def retrieve_geojson(endpoint: str, user_id: str) -> dict:
+    url = f"{endpoint}/{user_id}/geojson"
+    response = requests.get(url)
+    return response.json()
 
 
 if __name__ == "__main__":
