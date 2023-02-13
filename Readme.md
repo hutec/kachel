@@ -1,5 +1,5 @@
 ## Deployment
 
 ```bash
-poetry run gunicorn kachel.server:app
+poetry run gunicorn kachel.wsgi:app
 ```
