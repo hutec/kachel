@@ -276,6 +276,21 @@ python-versions = ">=3.5"
 traitlets = "*"
 
 [[package]]
+name = "mercantile"
+version = "1.2.1"
+description = "Web mercator XYZ tile utilities"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+click = ">=3.0"
+
+[package.extras]
+dev = ["check-manifest"]
+test = ["hypothesis", "pytest"]
+
+[[package]]
 name = "mypy"
 version = "1.0.0"
 description = "Optional static typing for Python"
@@ -578,7 +593,7 @@ watchdog = ["watchdog"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "db079625b4103419eeac04e8da29099e76cec326193c5ee8ed2cd401a46d8943"
+content-hash = "b38d9d338de8804a0845d24e8f97f0e337d77bc1d20dcf01b39ed2d9f7cc4089"
 
 [metadata.files]
 appnope = []
@@ -607,6 +622,7 @@ jedi = []
 jinja2 = []
 markupsafe = []
 matplotlib-inline = []
+mercantile = []
 mypy = []
 mypy-extensions = []
 nodeenv = []
