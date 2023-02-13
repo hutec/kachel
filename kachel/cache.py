@@ -6,14 +6,14 @@ the tile in zoom level 14 is covered by the geojson file.
 
 import argparse
 import json
+import math
 import os
 import pickle
 from collections import defaultdict
 from typing import List
 
 import requests
-
-from kachel.utils import deg2num, get_parent_tile
+from mercantile import Tile, tile
 
 
 def main():
@@ -76,28 +76,34 @@ def create_cache_file(geojson_file: str, cache_file: str) -> None:
         geojson = json.load(f)
 
     routes = geojson["features"]
-    visited = set()
+    cache = defaultdict(int)
+    processed_tiles = set()
     for route in routes:
         coordinates = route["geometry"]["coordinates"]
         # TODO: Properly handle interpolation between tiles
         #  For now, we assume the coordinates are close enough
         for lng, lat in coordinates:
-            zoom = 14
-            x, y = deg2num(lat, lng, zoom)
-            visited.add((x, y, zoom))
+            level_14_tile: Tile = tile(lng, lat, 14)
 
-    cache = defaultdict(int)
-    for zoom in range(14, 8, -1):
-        for x, y, z in visited:
-            parent_x, parent_y = get_parent_tile(x, y, zoom)
+            if level_14_tile in processed_tiles:  # Skip already processed tiles
+                continue
+            processed_tiles.add(level_14_tile)
 
-            n_tiles = 2 ** (14 - zoom)  # Number of level 14 tiles in this zoom level
-            # The x and y coordinates of the parent tile in level 14
-            parent_x_l14 = parent_x * n_tiles
-            parent_y_l14 = parent_y * n_tiles
+            for zoom in range(8, 15):
+                parent_tile: Tile = tile(lng, lat, zoom)
 
-            idx = (y - parent_y_l14) * n_tiles + (x - parent_x_l14)
-            cache[(parent_x, parent_y, zoom)] |= 1 << idx
+                # Number of level 14 tiles in this zoom level
+                n_tiles = int(math.pow(2, 14 - zoom))
+                # Compute the top left level 14 tile in the parent tile, that's index 0
+                level_14_top_left_tile = Tile(
+                    parent_tile.x * n_tiles, parent_tile.y * n_tiles, 14
+                )
+
+                # Compute the index of the level 14 tile in the parent tile
+                idx = (level_14_tile.y - level_14_top_left_tile.y) * n_tiles + (
+                    level_14_tile.x - level_14_top_left_tile.x
+                )
+                cache[(parent_tile.x, parent_tile.y, zoom)] |= 1 << idx
 
     with open(cache_file, "wb") as f:
         pickle.dump(cache, f)
