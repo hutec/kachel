@@ -13,6 +13,9 @@ def generate_tile(idx: int, zoom_level: int) -> Image:
     """
     image = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
 
+    if zoom_level > 14:
+        return image
+
     # Number of level 14 tiles in this zoom level
     n_tiles = 2 ** (14 - zoom_level)
     # Size of a level 14 tile in this zoom level
