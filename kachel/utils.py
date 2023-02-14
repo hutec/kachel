@@ -1,3 +1,7 @@
+from itertools import product
+from typing import Dict, Set, Tuple
+
+from mercantile import Tile
 from PIL import Image
 
 
@@ -31,3 +35,34 @@ def generate_tile(idx: int, zoom_level: int) -> Image:
                 (x * pixels_per_tile, y * pixels_per_tile),
             )
     return image
+
+
+def compute_max_square(tiles: Set[Tile]) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    """Compute the maximum square that contains covered tiles.
+
+    Args:
+        tiles: Set of visited tiles.
+
+    Return:
+        The top left and bottom right coordinates of the square.
+    """
+
+    coordinates = set((tile.x, tile.y) for tile in tiles)
+
+    known_squares: Dict[Tuple[int, int], int] = {}
+
+    def _check_square(x: int, y: int, square_size: int) -> bool:
+        """Check if a square of size `square_size` starting at (x, y) is covered."""
+        for dx, dy in product(range(square_size), repeat=2):
+            if (x + dx, y + dy) not in coordinates:
+                return False
+        return True
+
+    for x, y in coordinates:
+        square_size = 1
+        while _check_square(x, y, square_size + 1):
+            square_size += 1
+        known_squares[(x, y)] = square_size
+
+    return max(known_squares.values())
+    # return max(known_squares, key=known_squares.get)

@@ -15,6 +15,8 @@ from typing import List
 import requests
 from mercantile import Tile, tile
 
+from kachel.utils import compute_max_square
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -104,6 +106,9 @@ def create_cache_file(geojson_file: str, cache_file: str) -> None:
                     level_14_tile.x - level_14_top_left_tile.x
                 )
                 cache[(parent_tile.x, parent_tile.y, zoom)] |= 1 << idx
+
+    max_square = compute_max_square(processed_tiles)
+    print(f"Cache file {cache_file} covers {max_square} square")
 
     with open(cache_file, "wb") as f:
         pickle.dump(cache, f)
