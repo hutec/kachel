@@ -33,11 +33,13 @@ def tile(user_id: str, z: int, x: int, y: int) -> Response:
             status=404,
         )
 
-    idx = 0
+    tile_idx = 0
+    max_square_idx = 0
     if (x, y, z) in app.cache[user_id]:
-        idx = app.cache[user_id][(x, y, z)]
+        tile_idx = app.cache[user_id][(x, y, z)]["tiles"]
+        max_square_idx = app.cache[user_id][(x, y, z)]["max_square"]
 
-    tile = generate_tile(idx, z)
+    tile = generate_tile(tile_idx, max_square_idx, z)
 
     img_byte_arr = io.BytesIO()
     tile.save(img_byte_arr, format="PNG")

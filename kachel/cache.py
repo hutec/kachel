@@ -13,9 +13,10 @@ from collections import defaultdict
 from typing import List
 
 import requests
-from mercantile import Tile, tile
+from mercantile import Tile, parent
+from mercantile import tile as tile_from_coordinates
 
-from kachel.utils import compute_max_square
+from kachel.utils import MaxSquare, compute_max_square
 
 
 def main():
@@ -78,40 +79,58 @@ def create_cache_file(geojson_file: str, cache_file: str) -> None:
         geojson = json.load(f)
 
     routes = geojson["features"]
-    cache = defaultdict(int)
+    cache = defaultdict(lambda: defaultdict(int))
     processed_tiles = set()
     for route in routes:
         coordinates = route["geometry"]["coordinates"]
         # TODO: Properly handle interpolation between tiles
         #  For now, we assume the coordinates are close enough
         for lng, lat in coordinates:
-            level_14_tile: Tile = tile(lng, lat, 14)
+            tile: Tile = tile_from_coordinates(lng, lat, 14)
+            processed_tiles.add(tile)
 
-            if level_14_tile in processed_tiles:  # Skip already processed tiles
+    max_squares = compute_max_square(processed_tiles)
+
+    for tile in processed_tiles:
+        _is_max_square = is_in_max_squares(tile, max_squares)
+
+        for zoom in range(8, 15):
+            if zoom == 14:
+                cache[(tile.x, tile.y, zoom)]["tiles"] = 1
+                if _is_max_square:
+                    cache[(tile.x, tile.y, zoom)]["max_square"] = 1
                 continue
-            processed_tiles.add(level_14_tile)
 
-            for zoom in range(8, 15):
-                parent_tile: Tile = tile(lng, lat, zoom)
+            parent_tile: Tile = parent(tile, zoom=zoom)
 
-                # Number of level 14 tiles in this zoom level
-                n_tiles = int(math.pow(2, 14 - zoom))
-                # Compute the top left level 14 tile in the parent tile, that's index 0
-                level_14_top_left_tile = Tile(
-                    parent_tile.x * n_tiles, parent_tile.y * n_tiles, 14
-                )
+            # Number of level 14 tiles in this zoom level
+            n_tiles = int(math.pow(2, 14 - zoom))
+            # Compute the top left level 14 tile in the parent tile, that's index 0
+            top_left_tile = Tile(parent_tile.x * n_tiles, parent_tile.y * n_tiles, 14)
 
-                # Compute the index of the level 14 tile in the parent tile
-                idx = (level_14_tile.y - level_14_top_left_tile.y) * n_tiles + (
-                    level_14_tile.x - level_14_top_left_tile.x
-                )
-                cache[(parent_tile.x, parent_tile.y, zoom)] |= 1 << idx
-
-    max_square = compute_max_square(processed_tiles)
-    print(f"Cache file {cache_file} covers {max_square} square")
+            # Compute the index of the level 14 tile in the parent tile
+            idx = (tile.y - top_left_tile.y) * n_tiles + (tile.x - top_left_tile.x)
+            cache[(parent_tile.x, parent_tile.y, zoom)]["tiles"] |= 1 << idx
+            if _is_max_square:
+                cache[(parent_tile.x, parent_tile.y, zoom)]["max_square"] |= 1 << idx
 
     with open(cache_file, "wb") as f:
-        pickle.dump(cache, f)
+        pickle.dump(dict(cache), f)
+
+
+def is_in_max_square(tile: Tile, max_square: MaxSquare) -> bool:
+    """Check if a tile is in the max square."""
+    _x = max_square.top_left[0] <= tile.x < max_square.bottom_right[0]
+    _y = max_square.top_left[1] <= tile.y < max_square.bottom_right[1]
+    return _x and _y
+
+
+def is_in_max_squares(tile: Tile, max_squares: List[MaxSquare]) -> bool:
+    """Check if a tile is in any of the max squares."""
+    for max_square in max_squares:
+        if is_in_max_square(tile, max_square):
+            return True
+    return False
 
 
 def retrieve_user_ids(endpoint: str) -> List[str]:
