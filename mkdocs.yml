@@ -15,4 +15,5 @@ plugins:
 
 nav:
   - index.md
+  - deployment.md
   - reference.md
