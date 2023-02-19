@@ -21,9 +21,14 @@ black = "^23.1.0"
 mypy = "^1.0.0"
 ipython = "^8.9.0"
 pre-commit = "^3.0.4"
+mkdocs = "^1.4.2"
+mkdocstrings = {version = "^0.20.0", extras = ["python"]}
+mkdocs-material = "^9.0.13"
 
 [tool.ruff]
-select = ["E", "F", "I001"]
+select = ["E", "F", "I001", "B"]
+
+ignore = ["D107", "D203", "D212", "D213", "D402", "D413", "D415", "D416", "D417"]
 
 line-length = 88
 
