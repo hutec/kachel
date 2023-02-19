@@ -16,7 +16,7 @@ import requests
 from mercantile import Tile, parent
 from mercantile import tile as tile_from_coordinates
 
-from kachel.utils import MaxSquare, compute_max_square
+from kachel.utils import MaxSquare, compute_max_squares
 
 
 def main():
@@ -89,7 +89,7 @@ def create_cache_file(geojson_file: str, cache_file: str) -> None:
             tile: Tile = tile_from_coordinates(lng, lat, 14)
             processed_tiles.add(tile)
 
-    max_squares = compute_max_square(processed_tiles)
+    max_squares = compute_max_squares(processed_tiles)
 
     for tile in processed_tiles:
         _is_max_square = is_in_max_squares(tile, max_squares)

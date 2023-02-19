@@ -54,14 +54,14 @@ class MaxSquare:
         return (self.top_left[0] + self.size, self.top_left[1] + self.size)
 
 
-def compute_max_square(tiles: Set[Tile]) -> List[MaxSquare]:
-    """Compute the maximum square that contains covered tiles.
+def compute_max_squares(tiles: Set[Tile]) -> List[MaxSquare]:
+    """Compute max squares that contains covered tiles.
 
     Args:
         tiles: Set of visited tiles.
 
     Return:
-        The top left and bottom right coordinates of the square.
+        List of max squares each consisting of a top left coordinate and a size.
     """
 
     coordinates = set((tile.x, tile.y) for tile in tiles)
