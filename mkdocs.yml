@@ -1,0 +1,18 @@
+site_name: kachel
+
+theme:
+  name: material
+
+plugins:
+  - mkdocstrings:
+      enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: false
+            show_root_heading: true
+
+nav:
+  - index.md
+  - reference.md
