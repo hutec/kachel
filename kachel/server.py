@@ -50,6 +50,29 @@ def tile(user_id: str, z: int, x: int, y: int) -> Response:
     )
 
 
+@app.route("/users")
+def users() -> Response:
+    """Return a list of endpoints for all users."""
+
+    endpoints = [
+        f"<li><code>/{user_id}/{{z}}/{{x}}/{{y}}.png</code></li>"
+        for user_id in app.cache.keys()
+    ]
+    page = f"""
+    <html>
+        <body>
+            <ul>
+                {''.join(endpoints)}
+            </ul>
+        </body>
+    </html>
+    """
+    return Response(
+        page,
+        mimetype="text/html",
+    )
+
+
 def generate_tile(idx: int, max_square_idx: int, zoom_level: int) -> Image.Image:
     """Generate a tile image.
 
