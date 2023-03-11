@@ -7,8 +7,7 @@ import pickle
 from typing import Dict, Tuple
 
 from flask import Flask, Response
-
-from kachel.utils import generate_tile
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -49,6 +48,44 @@ def tile(user_id: str, z: int, x: int, y: int) -> Response:
         img_byte_arr,
         mimetype="image/png",
     )
+
+
+def generate_tile(idx: int, max_square_idx: int, zoom_level: int) -> Image.Image:
+    """Generate a tile image.
+
+    Args:
+        idx: bitmask indicating which tiles are covered.
+        max_square_idx: bitmask indicating which tiles are part of a max square.
+        zoom_level: the zoom level of the tile.
+        max_square: Whether to highlight the maximum square.
+
+    Returns:
+        A 256x256 PNG image.
+    """
+    image = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+
+    if zoom_level > 14:
+        return image
+
+    # Number of level 14 tiles in this zoom level
+    n_tiles = 2 ** (14 - zoom_level)
+    # Size of a level 14 tile in this zoom level
+    pixels_per_tile = 256 // (2 ** (14 - zoom_level))
+    covered_tile = Image.new(
+        "RGBA", (pixels_per_tile, pixels_per_tile), (0, 0, 255, 80)
+    )
+    covered_max_square = Image.new(
+        "RGBA", (pixels_per_tile, pixels_per_tile), (255, 0, 0, 80)
+    )
+
+    for i in range(n_tiles * n_tiles):
+        if (idx & (1 << i)) != 0:
+            t = covered_max_square if (max_square_idx & (1 << i)) != 0 else covered_tile
+
+            x = i % n_tiles
+            y = i // n_tiles
+            image.paste(t, (x * pixels_per_tile, y * pixels_per_tile))
+    return image
 
 
 def _load_cache(cache_dir: str) -> Dict[str, Dict[Tuple[int, int, int], int]]:

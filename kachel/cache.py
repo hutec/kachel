@@ -10,13 +10,13 @@ import math
 import os
 import pickle
 from collections import defaultdict
-from typing import List
+from dataclasses import dataclass
+from itertools import product
+from typing import Dict, List, Set, Tuple
 
 import requests
 from mercantile import Tile, parent
 from mercantile import tile as tile_from_coordinates
-
-from kachel.utils import MaxSquare, compute_max_squares
 
 
 def main():
@@ -71,6 +71,16 @@ def main():
                 create_cache_file(geojson_file, cache_file)
         else:
             create_cache_file(args.geojson, args.cache)
+
+
+@dataclass
+class MaxSquare:
+    top_left: Tuple[int, int]
+    size: int
+
+    @property
+    def bottom_right(self) -> Tuple[int, int]:
+        return (self.top_left[0] + self.size, self.top_left[1] + self.size)
 
 
 def create_cache_file(geojson_file: str, cache_file: str) -> None:
@@ -144,6 +154,41 @@ def retrieve_geojson(endpoint: str, user_id: str) -> dict:
     url = f"{endpoint}/{user_id}/geojson"
     response = requests.get(url)
     return response.json()
+
+
+def compute_max_squares(tiles: Set[Tile]) -> List[MaxSquare]:
+    """Compute max squares that contains covered tiles.
+
+    Args:
+        tiles: Set of visited tiles.
+
+    Return:
+        List of max squares each consisting of a top left coordinate and a size.
+    """
+
+    coordinates = set((tile.x, tile.y) for tile in tiles)
+
+    known_squares: Dict[Tuple[int, int], int] = {}
+
+    def _check_square(x: int, y: int, square_size: int) -> bool:
+        """Check if a square of size `square_size` starting at (x, y) is covered."""
+        for dx, dy in product(range(square_size), repeat=2):
+            if (x + dx, y + dy) not in coordinates:
+                return False
+        return True
+
+    for x, y in coordinates:
+        square_size = 1
+        while _check_square(x, y, square_size + 1):
+            square_size += 1
+        known_squares[(x, y)] = square_size
+
+    max_square_size = max(known_squares.values())
+    max_squares = []
+    for (x, y), square_size in known_squares.items():
+        if square_size == max_square_size:
+            max_squares.append(MaxSquare((x, y), square_size))
+    return max_squares
 
 
 if __name__ == "__main__":
