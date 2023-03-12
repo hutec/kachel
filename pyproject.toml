@@ -28,7 +28,7 @@ mkdocs-material = "^9.0.13"
 [tool.ruff]
 select = ["E", "F", "I001", "B"]
 
-ignore = ["D107", "D203", "D212", "D213", "D402", "D413", "D415", "D416", "D417"]
+ignore = ["E501", "D107", "D203", "D212", "D213", "D402", "D413", "D415", "D416", "D417"]
 
 line-length = 88
 
