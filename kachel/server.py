@@ -13,8 +13,8 @@ app = Flask(__name__)
 
 
 @app.route("/<string:user_id>/<int:z>/<int:x>/<int:y>.png")
-def tile(user_id: str, z: int, x: int, y: int) -> Response:
-    """serve a tile.
+def default_tile(user_id: str, z: int, x: int, y: int) -> Response:
+    """Serving the default tile at zoom level 14.
 
     Args:
         user_id: The user id.
@@ -23,22 +23,46 @@ def tile(user_id: str, z: int, x: int, y: int) -> Response:
         y: the y coordinate.
 
     Returns:
-        a 256x256 png image
+        A 256x256 png image
+    """
+    return tile(user_id, 14, z, x, y)
+
+
+@app.route("/<string:user_id>/<int:tile_level>/<int:z>/<int:x>/<int:y>.png")
+def tile(user_id: str, tile_level: int, z: int, x: int, y: int) -> Response:
+    """Serve a tile at specified zoom level.
+
+    Args:
+        user_id: The user id.
+        tile_level: The target zoom level of the tile.
+            Options are 14, 15, 16.
+        z: the zoom level, higher is closer.
+        x: the x coordinate.
+        y: the y coordinate.
+
+    Returns:
+        A 256x256 png image
     """
 
     if user_id not in app.cache:
         return Response(
-            f"User id {user_id} not found",
+            f"User id {user_id} not found.",
+            status=404,
+        )
+
+    if tile_level not in app.cache[user_id]:
+        return Response(
+            f"Tile level {tile_level} not found. Available levels: {app.cache[user_id].keys()}",
             status=404,
         )
 
     tile_idx = 0
     max_square_idx = 0
-    if (x, y, z) in app.cache[user_id]:
-        tile_idx = app.cache[user_id][(x, y, z)]["tiles"]
-        max_square_idx = app.cache[user_id][(x, y, z)]["max_square"]
+    if (x, y, z) in app.cache[user_id][tile_level]:
+        tile_idx = app.cache[user_id][tile_level][(x, y, z)]["tiles"]
+        max_square_idx = app.cache[user_id][tile_level][(x, y, z)]["max_square"]
 
-    tile = generate_tile(tile_idx, max_square_idx, z)
+    tile = generate_tile(tile_idx, max_square_idx, z, tile_level)
 
     img_byte_arr = io.BytesIO()
     tile.save(img_byte_arr, format="PNG")
@@ -73,27 +97,29 @@ def users() -> Response:
     )
 
 
-def generate_tile(idx: int, max_square_idx: int, zoom_level: int) -> Image.Image:
+def generate_tile(
+    idx: int, max_square_idx: int, zoom_level: int, tile_level: int = 16
+) -> Image.Image:
     """Generate a tile image.
 
     Args:
-        idx: bitmask indicating which tiles are covered.
-        max_square_idx: bitmask indicating which tiles are part of a max square.
-        zoom_level: the zoom level of the tile.
-        max_square: Whether to highlight the maximum square.
+        idx: Bitmask indicating which tiles are covered.
+        max_square_idx: Bitmask indicating which tiles are part of a max square.
+        zoom_level: The zoom level of the tile.
+        tile_level: The zoom level of the tiles in the bitmask.
 
     Returns:
         A 256x256 PNG image.
     """
     image = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
 
-    if zoom_level > 14:
+    if zoom_level > tile_level:
         return image
 
-    # Number of level 14 tiles in this zoom level
-    n_tiles = 2 ** (14 - zoom_level)
-    # Size of a level 14 tile in this zoom level
-    pixels_per_tile = 256 // (2 ** (14 - zoom_level))
+    # Number of level target_zoom tiles in this zoom level
+    n_tiles = 2 ** (tile_level - zoom_level)
+    # Size of a level target_zoom tile in this zoom level
+    pixels_per_tile = 256 // (2 ** (tile_level - zoom_level))
     covered_tile = Image.new(
         "RGBA", (pixels_per_tile, pixels_per_tile), (0, 0, 255, 80)
     )
